@@ -1,0 +1,16 @@
+# Dependencies for the AutoML insolvency experiments.
+# Tested with Python 3.10.6 (see the notebooks' metadata).
+#
+# The models saved under H10h1/, H10h3/ and H10h5/ were trained with
+# H2O 3.40.0.4, so keep that exact version when loading them again.
+
+h2o==3.40.0.4
+
+# Data handling and plots
+pandas==1.5.3
+numpy==1.24.4
+matplotlib==3.7.1
+joblib==1.2.0
+
+# To run the Jupyter notebooks (.ipynb)
+jupyterlab==4.0.2
