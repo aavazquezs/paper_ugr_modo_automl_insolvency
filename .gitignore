@@ -1,2 +1,16 @@
 datasets/
 .venv/
+# --- Leak-free pipeline: large data and artifacts (not versioned) ---
+data/
+backups/
+*.log
+.ipynb_checkpoints/
+# H2O binary models and MOJO zips (12–60 MB per horizon)
+runs/**/*_AutoML_*
+# Per-row test predictions (3–5 MB each, regenerable)
+runs/**/leader_test_predictions_*.csv
+# Superseded runs (v1, v2), documented in HISTORICO_EJECUCIONES.md
+runs/leakfree_h*/
+runs/leakfree_v2_h*/
+runs_leakfree_*/
+notebooks_leakfree/runs/
