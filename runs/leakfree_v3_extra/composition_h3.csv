@@ -1,0 +1,55 @@
+h,subset,block,level,n,pct
+3,all,Total,Windows,376635,100.0
+3,all,Total,Firms,58760,100.0
+3,all,Total,Positive windows,8856,2.3513481221872636
+3,all,Total,Firms with a positive window,3775,6.424438393464942
+3,all,Sector (windows),Services,193465,51.36670782056898
+3,all,Sector (windows),Industry,96409,25.59746173350857
+3,all,Sector (windows),Construction,82452,21.891751961448087
+3,all,Sector (windows),Agriculture,4309,1.1440784844743586
+3,all,Sector (firms),Services,29703,50.54969366916269
+3,all,Sector (firms),Construction,14665,24.957454050374405
+3,all,Sector (firms),Industry,13704,23.321987746766506
+3,all,Sector (firms),Agriculture,688,1.170864533696392
+3,all,Size (windows),Microenterprise,183183,48.636743797044886
+3,all,Size (windows),Small company,150949,40.07832516893013
+3,all,Size (windows),Medium enterprise,42503,11.284931034024984
+3,all,Size (firms),Microenterprise,31330,53.31858407079646
+3,all,Size (firms),Small company,21765,37.04050374404357
+3,all,Size (firms),Medium enterprise,5665,9.640912185159973
+3,train,Total,Windows,263730,100.0
+3,train,Total,Firms,41132,100.0
+3,train,Total,Positive windows,6205,2.3527850453114927
+3,train,Total,Firms with a positive window,2643,6.425653992025674
+3,train,Sector (windows),Services,135539,51.39309141925454
+3,train,Sector (windows),Industry,67920,25.753611648276646
+3,train,Sector (windows),Construction,57224,21.697948659614
+3,train,Sector (windows),Agriculture,3047,1.1553482728548137
+3,train,Sector (firms),Services,20814,50.60293688612273
+3,train,Sector (firms),Construction,10184,24.759311484975203
+3,train,Sector (firms),Industry,9638,23.43187785665662
+3,train,Sector (firms),Agriculture,496,1.2058737722454536
+3,train,Size (windows),Microenterprise,127616,48.38888256929435
+3,train,Size (windows),Small company,106230,40.27983164600159
+3,train,Size (windows),Medium enterprise,29884,11.331285784704054
+3,train,Size (firms),Microenterprise,21863,53.153262666537
+3,train,Size (firms),Small company,15296,37.18759116989205
+3,train,Size (firms),Medium enterprise,3973,9.659146163570941
+3,test,Total,Windows,112905,100.0
+3,test,Total,Firms,17628,100.0
+3,test,Total,Positive windows,2651,2.3479916744165448
+3,test,Total,Firms with a positive window,1132,6.421601996823235
+3,test,Sector (windows),Services,57926,51.30507949160799
+3,test,Sector (windows),Industry,28489,25.232717771577875
+3,test,Sector (windows),Construction,25228,22.344448872946284
+3,test,Sector (windows),Agriculture,1262,1.1177538638678535
+3,test,Sector (firms),Services,8889,50.425459496255954
+3,test,Sector (firms),Construction,4481,25.419786702972544
+3,test,Sector (firms),Industry,4066,23.06557749035625
+3,test,Sector (firms),Agriculture,192,1.0891763104152485
+3,test,Size (windows),Microenterprise,55567,49.21571232452062
+3,test,Size (windows),Small company,44719,39.60763473716842
+3,test,Size (windows),Medium enterprise,12619,11.17665293831097
+3,test,Size (firms),Microenterprise,9467,53.70433401406853
+3,test,Size (firms),Small company,6469,36.69729975039709
+3,test,Size (firms),Medium enterprise,1692,9.598366235534376
