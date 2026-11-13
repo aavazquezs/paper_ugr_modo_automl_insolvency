@@ -18,6 +18,7 @@ _Ejecución del 2026-11-02. Los resultados de ejecuciones anteriores (2023, leak
 - El AUCPR sube con h porque sube la proporción de insolvencias en test. Para comparar horizontes conviene mirar el AUC.
 - **Mejor compromiso rendimiento/velocidad:** XGBoost_3 en h3 y h5 (predice entre 9 y 14 veces más rápido que el ensemble, con un AUCPR algo menor).
 - **Variables más influyentes:** ratios financieros del último año. En h1 pesan la rentabilidad (F21, F20) y los gastos financieros sobre el activo (F28); en h3 y h5, la carga financiera (F27), la cobertura de intereses (F25) y la liquidez (F36 y F37).
+- **Validación *out-of-time*** (corte 2014): AUC en test de 0,926 / 0,894 / 0,878 (ensemble h1/h3/h5). El *lift* sobre la prevalencia se mantiene; el AUC apenas cambia en empresas no vistas en train (§6.3).
 
 ## 2. Datos de partida
 
@@ -399,11 +400,86 @@ Ficheros de datos de cada `runs/leakfree_v3_h{h}/`:
 - `*_metalearner_coef_norm.json`: coeficientes del metalearner;
 - además, los modelos binarios y el MOJO del líder.
 
-## 6. Limitaciones y puntos pendientes
+## 6. Análisis complementarios
+
+Scripts en `scripts/04_*`–`07_*`; salidas en `runs/leakfree_v3_extra/` y `runs/leakfree_v3oot_h{h}/`.
+
+### 6.1 Composición por sector y tamaño (`04_dataset_composition.py`)
+
+El split por empresa conserva la composición: train y test difieren en menos de 1 punto porcentual en sector y tamaño en los tres horizontes. Detalle en `composition_h{h}.csv` y `composition_summary.md`.
+
+| % de ventanas (h1) | Total | Train | Test |
+|---|---|---|---|
+| Servicios | 51,6 | 51,4 | 51,9 |
+| Industria | 25,1 | 25,1 | 25,0 |
+| Construcción | 22,2 | 22,3 | 22,1 |
+| Agricultura | 1,2 | 1,2 | 1,0 |
+| Microempresa | 49,2 | 49,2 | 49,3 |
+| Pequeña | 39,8 | 39,8 | 39,8 |
+| Mediana | 11,0 | 11,0 | 10,9 |
+
+h3 y h5 muestran el mismo patrón (servicios ≈ 51 %, microempresas ≈ 48 %).
+
+### 6.2 Importancia por permutación (`05_permutation_importance.py`)
+
+Modelos seleccionados (GBM_2 en h1, XGBoost_3 en h3 y h5) sobre el test completo. Métrica: caída de AUCPR al permutar cada columna, media de 3 repeticiones.
+
+| h | AUCPR base | Top 5 columnas (caída de AUCPR) | Top variables base (% de la caída total) |
+|---|---|---|---|
+| 1 | 0,195 | F21_1 0,080 · F20_1 0,041 · F42_1 0,017 · F37_1 0,017 · F28_1 0,016 | F21 11,6 · F20 7,2 · F28 4,7 · F37 4,3 · F40 4,3 |
+| 3 | 0,293 | F27_1 0,092 · N15 0,027 · F20_1 0,022 · F25_1 0,021 · F40_1 0,020 | F27 22,2 · F25 6,1 · F20 5,6 · N15 5,2 · F40 4,9 |
+| 5 | 0,414 | F27_1 0,167 · N15 0,035 · N8 0,016 · F27_2 0,015 · F28_1 0,015 | F27 36,4 · N15 6,2 · F33 5,0 · F25 4,2 · N2 4,1 |
+
+La variable dominante coincide con la importancia nativa de H2O: F21 en h1 y F27 en h3 y h5. La permutación sube a N15 (empresa familiar) al 2.º puesto en h3 y h5; ver limitación 1.
+
+### 6.3 Validación *out-of-time* (`06_oot_split.py`, `07_oot_unseen_eval.py`)
+
+**Diseño:**
+- Corte C = 2014, común a los tres horizontes.
+- Train: ventanas con la etiqueta observable en el corte (`ref_year + h ≤ 2014`).
+- Test: ventanas con `ref_year ≥ 2014`, todas las empresas.
+- Mismo preprocesamiento y configuración de AutoML que v3 (`LEAKFREE_VERSION=v3oot`). Se eliminan las mismas variables (F26, F32).
+
+| h | Train: años · ventanas · positivos | Test: años · ventanas · positivos · prevalencia | Test, empresas no vistas: ventanas · positivos |
+|---|---|---|---|
+| 1 | 2008–2013 · 223.014 · 2.400 | 2014–2019 · 264.096 · 1.222 · 0,46 % | 50.083 · 259 |
+| 3 | 2008–2011 · 134.036 · 4.793 | 2014–2017 · 167.652 · 2.234 · 1,33 % | 49.912 · 641 |
+| 5 | 2008–2009 · 60.708 · 3.844 | 2014–2015 · 79.678 · 1.789 · 2,25 % | 31.546 · 601 |
+
+**Split por empresa (v3) frente a split temporal (v3oot)**, test. *Lift* = AUCPR ÷ prevalencia.
+
+| h | Modelo | AUC v3 | AUC oot | AUCPR v3 | AUCPR oot | *Lift* v3 | *Lift* oot |
+|---|---|---|---|---|---|---|---|
+| 1 | SE_All | 0,943 | 0,926 | 0,231 | 0,158 | 31× | 34× |
+| 1 | GBM_2 | 0,936 | 0,919 | 0,195 | 0,126 | 26× | 27× |
+| 3 | SE_All | 0,921 | 0,894 | 0,338 | 0,207 | 14× | 16× |
+| 3 | XGBoost_3 | 0,911 | 0,879 | 0,293 | 0,181 | 12× | 14× |
+| 5 | SE_All | 0,916 | 0,878 | 0,446 | 0,280 | 11× | 12× |
+| 5 | XGBoost_3 | 0,908 | 0,862 | 0,414 | 0,235 | 10× | 10× |
+
+**Test temporal por tipo de empresa** (AUC / *lift*):
+
+| h | Modelo | Vistas en train | No vistas |
+|---|---|---|---|
+| 1 | SE_All | 0,929 / 37× | 0,916 / 25× |
+| 1 | GBM_2 | 0,921 / 29× | 0,908 / 21× |
+| 3 | SE_All | 0,894 / 16× | 0,896 / 15× |
+| 3 | XGBoost_3 | 0,879 / 14× | 0,878 / 13× |
+| 5 | SE_All | 0,880 / 13× | 0,874 / 11× |
+| 5 | XGBoost_3 | 0,868 / 11× | 0,851 / 9× |
+
+**Lectura:**
+- El AUC cae entre 0,017 (h1) y 0,038 (h5). La caída crece con el horizonte; en h5 se entrena solo con 2008–2009.
+- El AUCPR baja sobre todo porque la prevalencia del test es casi la mitad. Ajustado por prevalencia, el *lift* se mantiene o sube.
+- El ranking de familias es el mismo que en v3: SE > GBM/XGBoost > DRF/XRT > GLM.
+- Aparece una brecha CV–test (h1: AUC 0,944 frente a 0,926) que no existía en v3. Es la señal esperable de *drift* temporal.
+- En empresas no vistas el AUC prácticamente no cambia. El *lift* baja algo en h1 (25× frente a 37×, con solo 259 positivos) y en h5.
+
+## 7. Limitaciones y puntos pendientes
 
 1. **N15 (empresa familiar)** puede ser en parte un artefacto de la fuente: "Sí" aparece en el 30,7 % de las filas de solventes, el 15,2 % de las insolventes con fecha y solo el 3,5 % de las insolventes sin fecha. Se mantiene porque también hay un efecto real documentado, pero convendría comprobar cómo se obtuvo.
 2. **N14 (días de retraso en presentar las cuentas)** cambia de nivel entre periodos (mediana de 47 → 74 días entre 2005–07 y 2008–10). En esta ejecución tiene poco peso (≈ 2 %).
 3. **La corrección de signo de F27** es aproximada: quedan un 13 % de valores negativos antes de 2008, frente al 0 % después.
-4. **Calendario:** las ventanas positivas son algo más antiguas (mediana de `ref_year` 2011–2012 frente a 2012–2014). `ref_year` no se usa como predictor, pero podría quedar algo de señal temporal. Un split temporal (*out-of-time*) sería una validación adicional.
+4. **Calendario:** las ventanas positivas son algo más antiguas (mediana de `ref_year` 2011–2012 frente a 2012–2014). `ref_year` no se usa como predictor. La validación *out-of-time* (§6.3) muestra que el rendimiento discriminante se mantiene en años posteriores (AUC 0,86–0,93) con una degradación moderada que crece con el horizonte.
 5. **Origen de `raw_data.csv`:** varios artefactos (FCA, N1, N11, insolventes sin fecha) indican que solventes e insolventes se extrajeron por vías distintas. Conviene documentar cómo se construyó el fichero.
 6. **Umbral de decisión:** §5.3 usa el umbral de F1 máximo elegido en la CV de train (sin mirar test). Para un uso concreto habría que fijarlo según el coste relativo de no detectar una insolvencia frente al de una falsa alarma.
