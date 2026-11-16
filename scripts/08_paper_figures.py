@@ -4,6 +4,9 @@
 pareto: cross-validated AUCPR (the AutoML sort metric used for model selection) vs
 prediction time per row, one panel per horizon (a/b/c), markers by algorithm family,
 Pareto front and selected model.
+varimp: importance of the selected models (GBM_2 h1, XGBoost_3 h3/h5), one row per
+horizon: (left) H2O native scaled importance, (right) permutation importance on the
+unbalanced test set (mean drop in AUCPR, error bar = SD over 3 repeats). Top 10 columns.
 Usage: 08_paper_figures.py <output_dir>
 """
 import os
@@ -74,6 +77,35 @@ def fig_pareto():
     plt.close(fig)
 
 
+TOP_N = 10
+
+
+def fig_varimp():
+    fig, axes = plt.subplots(len(HORIZONS), 2, figsize=(10, 11))
+    for row, h, letter in zip(axes, HORIZONS, 'abc'):
+        tag = SELECTED[h]
+        native = pd.read_csv(os.path.join(ROOT, 'runs', f'leakfree_{VERSION}_h{h}',
+                                          f'10_to_predict_{h}_leakfree_{tag}_varimp.csv')).head(TOP_N)
+        perm = pd.read_csv(os.path.join(ROOT, 'runs', 'leakfree_v3_extra',
+                                        f'permimp_h{h}_{tag}.csv')).head(TOP_N)
+        ax = row[0]
+        ax.barh(native['variable'][::-1], native['scaled_importance'][::-1], color='tab:blue')
+        ax.set_title(f'{letter}) h = {h}, {tag}: H2O importance')
+        ax.set_xlabel('Scaled importance')
+        ax = row[1]
+        ax.barh(perm['variable'][::-1], perm['mean_drop'][::-1], xerr=perm['sd_drop'][::-1],
+                color='tab:orange', capsize=2)
+        ax.set_title(f'{letter}) h = {h}, {tag}: permutation importance')
+        ax.set_xlabel('Mean decrease in AUCPR (test)')
+        for ax in row:
+            ax.grid(True, axis='x', alpha=0.6)
+            ax.tick_params(axis='y', labelsize=8)
+    fig.tight_layout()
+    fig.savefig(os.path.join(OUT, 'varimp_leakfree.pdf'), bbox_inches='tight')
+    plt.close(fig)
+
+
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
     fig_pareto()
+    fig_varimp()
