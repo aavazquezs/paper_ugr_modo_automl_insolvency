@@ -7,7 +7,9 @@ Pareto front and selected model.
 varimp: importance of the selected models (GBM_2 h1, XGBoost_3 h3/h5), one row per
 horizon: (left) H2O native scaled importance, (right) permutation importance on the
 unbalanced test set (mean drop in AUCPR, error bar = SD over 3 repeats). Top 10 columns.
-Usage: 08_paper_figures.py <output_dir>
+shap: H2O SHAP summary plots of the selected models, copied with the title band
+(internal model id) cropped.
+Usage: 08_paper_figures.py <output_dir> [pareto|varimp|shap ...]   (default: all)
 """
 import os
 import sys
@@ -15,7 +17,9 @@ import sys
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+from PIL import Image
 
 ROOT = '/media/datos/WORKSPACE/DOCTORADO/paper_ugr_modo_automl_insolvency'
 VERSION = 'v3'
@@ -105,7 +109,24 @@ def fig_varimp():
     plt.close(fig)
 
 
+def fig_shap():
+    for h in HORIZONS:
+        src = os.path.join(ROOT, 'runs', f'leakfree_{VERSION}_h{h}', 'plots', f'{SELECTED[h]}_shap_summary.png')
+        img = np.asarray(Image.open(src).convert('RGB')).copy()
+        dark = img.mean(axis=2) < 100
+        # top spine of the axes: first row where most pixels are dark
+        spine = int(np.where(dark.mean(axis=1) > 0.5)[0][0])
+        cols = np.where(dark[spine])[0]
+        right = cols[np.argmax(np.diff(cols) > 1)] if (np.diff(cols) > 1).any() else cols[-1]
+        img[:spine, cols[0]:right + 1] = 255  # blank the title above the main axes (not the colorbar)
+        content = np.where((img.mean(axis=2) < 250).any(axis=1))[0]
+        top = max(int(content[0]) - 6, 0)  # keep what lies outside the axes (colorbar label)
+        Image.fromarray(img[top:]).save(os.path.join(OUT, f'shap_summary_leakfree_h{h}.png'), optimize=True)
+
+
+FIGURES = {'pareto': fig_pareto, 'varimp': fig_varimp, 'shap': fig_shap}
+
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
-    fig_pareto()
-    fig_varimp()
+    for name in sys.argv[2:] or FIGURES:
+        FIGURES[name]()
